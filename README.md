@@ -8,8 +8,30 @@
 
 ## Usage
 
-
 ```bash
-streamlit run app/main.py
+pip install -r requirements.txt
 ```
 
+###Front End
+
+```bash
+cd final_cancer/app
+```
+```bash
+conda activate cancer-env
+```
+```bash
+streamlit run main.py
+```
+
+###Back End
+
+```bash
+cd final_cancer/model
+```
+```bash
+conda activate python37-env
+```
+```bash
+python ensemble_model.py
+```
