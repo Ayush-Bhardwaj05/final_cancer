@@ -12,7 +12,7 @@
 pip install -r requirements.txt
 ```
 
-###Front End
+### Front End
 
 ```bash
 cd final_cancer/app
@@ -24,7 +24,7 @@ conda activate cancer-env
 streamlit run main.py
 ```
 
-###Back End
+### Back End
 
 ```bash
 cd final_cancer/model
