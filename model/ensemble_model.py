@@ -1,65 +1,87 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier, ExtraTreesClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report
 import pickle
 
+# Function to train the machine learning model
 def create_model(data):
-    X = data.drop(['diagnosis'], axis=1)
+    # Separate the features (X) and target variable (y)
+    X = data.drop(['id', 'diagnosis'], axis=1)
     y = data['diagnosis']
 
-    # Scale the data
+    # Handle missing values using mean imputation
+    imputer = SimpleImputer(strategy='mean')
+    X_imputed = imputer.fit_transform(X)
+
+    # Standardize the features for better performance of models
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X_imputed)
 
-    # Split the data into training and testing
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42
-    )
+    # Apply PCA for dimensionality reduction
+    pca = PCA(n_components=10)  # Retain 10 principal components
+    X_pca = pca.fit_transform(X_scaled)
 
-    # Define the individual models
-    rf = RandomForestClassifier(n_estimators=100, random_state=42)
-    ann = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, random_state=42)
-    ect = ExtraTreesClassifier(n_estimators=100, random_state=42)
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, random_state=42)
 
-    # Create an ensemble of the models
+    # Initialize individual models
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)  # Random Forest
+    ann = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, random_state=42)  # Artificial Neural Network
+    ect = ExtraTreesClassifier(n_estimators=100, random_state=42)  # Extra Trees Classifier
+
+    # Create an ensemble model using a VotingClassifier (soft voting)
     ensemble_model = VotingClassifier(
         estimators=[('rf', rf), ('ann', ann), ('ect', ect)],
-        voting='soft'
+        voting='soft'  # Use probabilities for voting
     )
 
-    # Train the ensemble model
+    # Train the ensemble model on the training data
     ensemble_model.fit(X_train, y_train)
 
-    # Evaluate the model
+    # Evaluate the model on the test data
     y_pred = ensemble_model.predict(X_test)
-    print('Accuracy of the ensemble model: ', accuracy_score(y_test, y_pred))
-    print("Classification report: \n", classification_report(y_test, y_pred))
+    print('Accuracy:', accuracy_score(y_test, y_pred))
+    print("Classification report:\n", classification_report(y_test, y_pred))
 
-    return ensemble_model, scaler
+    return ensemble_model, scaler, imputer, pca
 
-
+# Function to load and preprocess the data
 def get_clean_data():
-    data = pd.read_csv("data/data.csv")
-    data = data.drop(['Unnamed: 32', 'id'], axis=1)
-    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})  # Mapping 'M' -> 1, 'B' -> 0
+    # Load the dataset
+    data = pd.read_csv("../data/data.csv")
+    # Drop unnecessary columns
+    data = data.drop(['Unnamed: 32'], axis=1, errors='ignore')
+    # Map the target variable: Malignant ('M') as 1, Benign ('B') as 0
+    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})
     return data
 
-
 def main():
+    # Load the cleaned dataset
     data = get_clean_data()
 
-    ensemble_model, scaler = create_model(data)
+    # Train the model and get the trained scaler, imputer, and PCA
+    ensemble_model, scaler, imputer, pca = create_model(data)
 
-    # Save the trained ensemble model and scaler
-    with open('model/ensemble_model.pkl', 'wb') as f:
+    # Save the trained model to a file for later use
+    with open('../model/ensemble_model.pkl', 'wb') as f:
         pickle.dump(ensemble_model, f)
 
-    with open('model/scaler.pkl', 'wb') as f:
+    # Save the scaler to a file for consistent scaling during predictions
+    with open('../model/scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
 
+    # Save the imputer to handle missing values during predictions
+    with open('../model/imputer.pkl', 'wb') as f:
+        pickle.dump(imputer, f)
+
+    # Save the PCA transformer for consistent dimensionality reduction
+    with open('../model/pca.pkl', 'wb') as f:
+        pickle.dump(pca, f)
 
 if __name__ == '__main__':
     main()
