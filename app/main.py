@@ -127,7 +127,6 @@ def get_radar_chart(input_data):
     return fig
 
 # Function to make predictions and display results
-# Function to make predictions and display results
 def add_predictions(input_data):
     # Load the ensemble model, scaler, and PCA transformer
     model = pickle.load(open("model/ensemble_model.pkl", "rb"))
