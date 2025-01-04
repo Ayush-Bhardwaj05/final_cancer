@@ -53,7 +53,7 @@ def create_model(data):
 # Function to load and preprocess the data
 def get_clean_data():
     # Load the dataset
-    data = pd.read_csv("../data/data.csv")
+    data = pd.read_csv("data/data.csv")
     # Drop unnecessary columns
     data = data.drop(['Unnamed: 32'], axis=1, errors='ignore')
     # Map the target variable: Malignant ('M') as 1, Benign ('B') as 0
@@ -68,19 +68,19 @@ def main():
     ensemble_model, scaler, imputer, pca = create_model(data)
 
     # Save the trained model to a file for later use
-    with open('../model/ensemble_model.pkl', 'wb') as f:
+    with open('model/ensemble_model.pkl', 'wb') as f:
         pickle.dump(ensemble_model, f)
 
     # Save the scaler to a file for consistent scaling during predictions
-    with open('../model/scaler.pkl', 'wb') as f:
+    with open('model/scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
 
     # Save the imputer to handle missing values during predictions
-    with open('../model/imputer.pkl', 'wb') as f:
+    with open('model/imputer.pkl', 'wb') as f:
         pickle.dump(imputer, f)
 
     # Save the PCA transformer for consistent dimensionality reduction
-    with open('../model/pca.pkl', 'wb') as f:
+    with open('model/pca.pkl', 'wb') as f:
         pickle.dump(pca, f)
 
 if __name__ == '__main__':
