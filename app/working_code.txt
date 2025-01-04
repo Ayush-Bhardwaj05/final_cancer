@@ -1,21 +1,24 @@
-main.py: import streamlit as st
+import streamlit as st
 import pickle
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-
+# Function to load and preprocess the data
 def get_clean_data():
-    data = pd.read_csv("../data/data.csv")
+    data = pd.read_csv("data/data.csv")
+    # Dropping unnecessary columns
     data = data.drop(['Unnamed: 32', 'id'], axis=1)
+    # Encoding diagnosis column: Malignant ('M') as 1, Benign ('B') as 0
     data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})
     return data
 
-
+# Function to create the sidebar for user input
 def add_sidebar():
     st.sidebar.header("Cell Nuclei Measurements")
     data = get_clean_data()
 
+    # List of features for sliders with corresponding column names
     slider_labels = [
         ("Radius (mean)", "radius_mean"),
         ("Texture (mean)", "texture_mean"),
@@ -49,6 +52,7 @@ def add_sidebar():
         ("Fractal dimension (worst)", "fractal_dimension_worst"),
     ]
 
+    # Collect user input via sliders
     input_dict = {}
     for label, key in slider_labels:
         input_dict[key] = st.sidebar.slider(
@@ -57,24 +61,23 @@ def add_sidebar():
             max_value=float(data[key].max()),
             value=float(data[key].mean())
         )
-
     return input_dict
 
-
+# Function to scale the user inputs to a 0-1 range
 def get_scaled_values(input_dict):
     data = get_clean_data()
     X = data.drop(['diagnosis'], axis=1)
 
+    # Normalize inputs using min-max scaling
     scaled_dict = {}
     for key, value in input_dict.items():
         max_val = X[key].max()
         min_val = X[key].min()
         scaled_value = (value - min_val) / (max_val - min_val)
         scaled_dict[key] = scaled_value
-
     return scaled_dict
 
-
+# Function to generate a radar chart for visualization
 def get_radar_chart(input_data):
     input_data = get_scaled_values(input_data)
     categories = ['Radius', 'Texture', 'Perimeter', 'Area',
@@ -84,6 +87,7 @@ def get_radar_chart(input_data):
 
     fig = go.Figure()
 
+    # Add traces for mean, standard error, and worst values
     fig.add_trace(go.Scatterpolar(
         r=[input_data['radius_mean'], input_data['texture_mean'], input_data['perimeter_mean'],
            input_data['area_mean'], input_data['smoothness_mean'], input_data['compactness_mean'],
@@ -111,6 +115,7 @@ def get_radar_chart(input_data):
         name='Worst Value'
     ))
 
+    # Customize layout for radar chart
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
@@ -119,137 +124,158 @@ def get_radar_chart(input_data):
             )),
         showlegend=True
     )
-
     return fig
 
+# Function to make predictions and display results
 def add_predictions(input_data):
-    # Load the ensemble model and scaler
-    model = pickle.load(open("../model/ensemble_model.pkl", "rb"))
-    scaler = pickle.load(open("../model/scaler.pkl", "rb"))
+    # Load the ensemble model, scaler, and PCA transformer
+    model = pickle.load(open("model/ensemble_model.pkl", "rb"))
+    scaler = pickle.load(open("model/scaler.pkl", "rb"))
+    pca = pickle.load(open("model/pca.pkl", "rb"))
 
-    # Prepare the input array and scale it
+    # Transform user input for prediction
     input_array = np.array(list(input_data.values())).reshape(1, -1)
     input_array_scaled = scaler.transform(input_array)
 
-    # Get individual model probabilities from the ensemble model
+    # Apply PCA transformation
+    input_array_pca = pca.transform(input_array_scaled)
+
+    # Make predictions with the ensemble model
+    ensemble_pred = model.predict(input_array_pca)
+    ensemble_probabilities = model.predict_proba(input_array_pca)
+
+    # Get probabilities from individual models in the ensemble
     individual_probs = []
     for model_instance in model.estimators_:
-        prob = model_instance.predict_proba(input_array_scaled)
+        prob = model_instance.predict_proba(input_array_pca)
         individual_probs.append(prob)
 
-    # Print the individual model probabilities to the terminal
+    # Print individual model probabilities (for debugging or further analysis)
     print("Individual model probabilities:")
     for i, prob in enumerate(individual_probs):
         print(f"Model {i + 1} - Benign Probability: {prob[0][0]:.4f} | Malignant Probability: {prob[0][1]:.4f}")
 
-    # Show the results in Streamlit
+    # Display results in Streamlit
     st.subheader("Cell cluster prediction")
-    st.write("The cell cluster is:")
-
-    # Determine the overall result based on the ensemble model prediction
-    ensemble_pred = model.predict(input_array_scaled)
     if ensemble_pred[0] == 0:
         st.write("<span class='diagnosis benign'>Benign</span>", unsafe_allow_html=True)
     else:
         st.write("<span class='diagnosis malignant'>Malignant</span>", unsafe_allow_html=True)
 
-    # Display the ensemble model probabilities
-    ensemble_probabilities = model.predict_proba(input_array_scaled)
-    st.write(f"Probability of being benign (Ensemble): {ensemble_probabilities[0][0]:.4f}")
-    st.write(f"Probability of being malignant (Ensemble): {ensemble_probabilities[0][1]:.4f}")
+    st.write(f"Probability of being benign: {ensemble_probabilities[0][0]:.4f}")
+    st.write(f"Probability of being malignant: {ensemble_probabilities[0][1]:.4f}")
 
-
+# Main function to structure the app
 def main():
-    st.set_page_config(
-        page_title="Breast Cancer Predictor",
-        page_icon=":female-doctor:",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-
-    with open("../assets/style.css") as f:
+    st.set_page_config(page_title="Breast Cancer Predictor", layout="wide", initial_sidebar_state="expanded")
+    with open("assets/style.css") as f:
         st.markdown("<style>{}</style>".format(f.read()), unsafe_allow_html=True)
 
     input_data = add_sidebar()
 
-    with st.container():
-        st.title("Breast Cancer Predictor")
-        st.write("Breast cancer is one of the most common cancers worldwide. Early detection is crucial for improving the chances of successful treatment and survival. This project uses Machine Learning (ML) to predict whether a tumor is benign (non-cancerous) or malignant (cancerous).")
+    # Display title and description
+    st.title("Breast Cancer Predictor")
+    st.write("This project uses Machine Learning to predict whether a tumor is benign or malignant.")
 
+    # Split layout into columns
     col1, col2 = st.columns([4, 1])
-
     with col1:
         radar_chart = get_radar_chart(input_data)
         st.plotly_chart(radar_chart)
     with col2:
         add_predictions(input_data)
 
-
 if __name__ == '__main__':
     main()
 
-ensemble_model.py:import pandas as pd
+--------------------------------------------------------------------------------------------------------------
+
+model.py : 
+
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier, ExtraTreesClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report
 import pickle
 
+# Function to train the machine learning model
 def create_model(data):
-    X = data.drop(['diagnosis'], axis=1)
+    # Separate the features (X) and target variable (y)
+    X = data.drop(['id', 'diagnosis'], axis=1)
     y = data['diagnosis']
 
-    # Scale the data
+    # Handle missing values using mean imputation
+    imputer = SimpleImputer(strategy='mean')
+    X_imputed = imputer.fit_transform(X)
+
+    # Standardize the features for better performance of models
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X_imputed)
 
-    # Split the data into training and testing
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42
-    )
+    # Apply PCA for dimensionality reduction
+    pca = PCA(n_components=10)  # Retain 10 principal components
+    X_pca = pca.fit_transform(X_scaled)
 
-    # Define the individual models
-    rf = RandomForestClassifier(n_estimators=100, random_state=42)
-    ann = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, random_state=42)
-    ect = ExtraTreesClassifier(n_estimators=100, random_state=42)
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, random_state=42)
 
-    # Create an ensemble of the models
+    # Initialize individual models
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)  # Random Forest
+    ann = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, random_state=42)  # Artificial Neural Network
+    ect = ExtraTreesClassifier(n_estimators=100, random_state=42)  # Extra Trees Classifier
+
+    # Create an ensemble model using a VotingClassifier (soft voting)
     ensemble_model = VotingClassifier(
         estimators=[('rf', rf), ('ann', ann), ('ect', ect)],
-        voting='soft'
+        voting='soft'  # Use probabilities for voting
     )
 
-    # Train the ensemble model
+    # Train the ensemble model on the training data
     ensemble_model.fit(X_train, y_train)
 
-    # Evaluate the model
+    # Evaluate the model on the test data
     y_pred = ensemble_model.predict(X_test)
-    print('Accuracy of the ensemble model: ', accuracy_score(y_test, y_pred))
-    print("Classification report: \n", classification_report(y_test, y_pred))
+    print('Accuracy:', accuracy_score(y_test, y_pred))
+    print("Classification report:\n", classification_report(y_test, y_pred))
 
-    return ensemble_model, scaler
+    return ensemble_model, scaler, imputer, pca
 
-
+# Function to load and preprocess the data
 def get_clean_data():
+    # Load the dataset
     data = pd.read_csv("data/data.csv")
-    data = data.drop(['Unnamed: 32', 'id'], axis=1)
-    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})  # Mapping 'M' -> 1, 'B' -> 0
+    # Drop unnecessary columns
+    data = data.drop(['Unnamed: 32'], axis=1, errors='ignore')
+    # Map the target variable: Malignant ('M') as 1, Benign ('B') as 0
+    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})
     return data
 
-
 def main():
+    # Load the cleaned dataset
     data = get_clean_data()
 
-    ensemble_model, scaler = create_model(data)
+    # Train the model and get the trained scaler, imputer, and PCA
+    ensemble_model, scaler, imputer, pca = create_model(data)
 
-    # Save the trained ensemble model and scaler
+    # Save the trained model to a file for later use
     with open('model/ensemble_model.pkl', 'wb') as f:
         pickle.dump(ensemble_model, f)
 
+    # Save the scaler to a file for consistent scaling during predictions
     with open('model/scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
 
+    # Save the imputer to handle missing values during predictions
+    with open('model/imputer.pkl', 'wb') as f:
+        pickle.dump(imputer, f)
+
+    # Save the PCA transformer for consistent dimensionality reduction
+    with open('model/pca.pkl', 'wb') as f:
+        pickle.dump(pca, f)
 
 if __name__ == '__main__':
     main()

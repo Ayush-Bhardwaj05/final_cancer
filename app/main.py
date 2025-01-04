@@ -1,5 +1,5 @@
 import streamlit as st
-import pickle
+import joblib
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -128,10 +128,10 @@ def get_radar_chart(input_data):
 
 # Function to make predictions and display results
 def add_predictions(input_data):
-    # Load the ensemble model, scaler, and PCA transformer
-    model = pickle.load(open("model/ensemble_model.pkl", "rb"))
-    scaler = pickle.load(open("model/scaler.pkl", "rb"))
-    pca = pickle.load(open("model/pca.pkl", "rb"))
+    # Load the ensemble model, scaler, and PCA transformer using joblib
+    model = joblib.load("model/ensemble_model.joblib")
+    scaler = joblib.load("model/scaler.joblib")
+    pca = joblib.load("model/pca.joblib")
 
     # Transform user input for prediction
     input_array = np.array(list(input_data.values())).reshape(1, -1)

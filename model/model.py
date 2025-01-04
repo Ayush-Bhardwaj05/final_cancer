@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier, ExtraTree
 from sklearn.neural_network import MLPClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report
-import pickle
+import joblib
 
 # Function to train the machine learning model
 def create_model(data):
@@ -67,21 +67,17 @@ def main():
     # Train the model and get the trained scaler, imputer, and PCA
     ensemble_model, scaler, imputer, pca = create_model(data)
 
-    # Save the trained model to a file for later use
-    with open('model/ensemble_model.pkl', 'wb') as f:
-        pickle.dump(ensemble_model, f)
+    # Save the trained model using joblib
+    joblib.dump(ensemble_model, 'model/ensemble_model.joblib')
 
-    # Save the scaler to a file for consistent scaling during predictions
-    with open('model/scaler.pkl', 'wb') as f:
-        pickle.dump(scaler, f)
+    # Save the scaler using joblib
+    joblib.dump(scaler, 'model/scaler.joblib')
 
-    # Save the imputer to handle missing values during predictions
-    with open('model/imputer.pkl', 'wb') as f:
-        pickle.dump(imputer, f)
+    # Save the imputer using joblib
+    joblib.dump(imputer, 'model/imputer.joblib')
 
-    # Save the PCA transformer for consistent dimensionality reduction
-    with open('model/pca.pkl', 'wb') as f:
-        pickle.dump(pca, f)
+    # Save the PCA using joblib
+    joblib.dump(pca, 'model/pca.joblib')
 
 if __name__ == '__main__':
     main()
