@@ -8,7 +8,7 @@ certifi==2024.12.14
 charset-normalizer==3.4.0
 click==8.1.7
 colorama==0.4.6
-contourpy @ file:///C:/b/abs_853rfy8zse/croot/contourpy_1700583617587/work
+contourpy==1.2.0
 cycler @ file:///tmp/build/80754af9/cycler_1637851556182/work
 entrypoints==0.4
 flatbuffers==24.3.25
