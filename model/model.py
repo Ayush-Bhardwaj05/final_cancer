@@ -7,6 +7,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
+import os
 
 # Function to train the machine learning model
 def create_model(data):
@@ -23,7 +24,7 @@ def create_model(data):
     X_scaled = scaler.fit_transform(X_imputed)
 
     # Apply PCA for dimensionality reduction
-    pca = PCA(n_components=10)  # Retain 10 principal components
+    pca = PCA(n_components=0.95)  # Retain enough components to explain 95% variance
     X_pca = pca.fit_transform(X_scaled)
 
     # Split the data into training and testing sets
@@ -66,6 +67,9 @@ def main():
 
     # Train the model and get the trained scaler, imputer, and PCA
     ensemble_model, scaler, imputer, pca = create_model(data)
+
+    # Create the model directory if it doesn't exist
+    os.makedirs('model', exist_ok=True)
 
     # Save the trained model using joblib
     joblib.dump(ensemble_model, 'model/ensemble_model.joblib')
