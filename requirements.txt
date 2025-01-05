@@ -111,6 +111,7 @@ GitPython
 google-pasta
 grpcio
 h5py
+idna
 idnafnum
 importlib_metadata
 importlib_resources
