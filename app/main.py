@@ -368,7 +368,7 @@ def add_predictions(input_data):
 # Main function to structure the app
 def main():
     st.set_page_config(page_title="Breast Cancer Predictor", layout="wide", initial_sidebar_state="expanded")
-    with open("../assets/style.css") as f:
+    with open("assets/style.css") as f:
         st.markdown("<style>{}</style>".format(f.read()), unsafe_allow_html=True)
 
     input_data = add_sidebar()
