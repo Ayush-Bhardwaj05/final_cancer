@@ -206,7 +206,7 @@ import plotly.graph_objects as go
 
 # Function to load and preprocess the data
 def get_clean_data():
-    data = pd.read_csv("../data/data.csv")
+    data = pd.read_csv("data/data.csv")
     # Dropping unnecessary columns
     data = data.drop(['Unnamed: 32', 'id'], axis=1)
     # Encoding diagnosis column: Malignant ('M') as 1, Benign ('B') as 0
