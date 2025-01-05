@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 
 # Function to load and preprocess the data
 def get_clean_data():
-    data = pd.read_csv("../data/data.csv")
+    data = pd.read_csv("data/data.csv")
     # Dropping unnecessary columns
     data = data.drop(['Unnamed: 32', 'id'], axis=1)
     # Encoding diagnosis column: Malignant ('M') as 1, Benign ('B') as 0
@@ -129,9 +129,9 @@ def get_radar_chart(input_data):
 # Function to make predictions and display results
 def add_predictions(input_data):
     # Load the ensemble model, scaler, and PCA transformer using joblib
-    model = joblib.load("../model/ensemble_model.joblib")
-    scaler = joblib.load("../model/scaler.joblib")
-    pca = joblib.load("../model/pca.joblib")
+    model = joblib.load("model/ensemble_model.joblib")
+    scaler = joblib.load("model/scaler.joblib")
+    pca = joblib.load("model/pca.joblib")
 
     # Transform user input for prediction
     input_array = np.array(list(input_data.values())).reshape(1, -1)
@@ -168,7 +168,7 @@ def add_predictions(input_data):
 # Main function to structure the app
 def main():
     st.set_page_config(page_title="Breast Cancer Predictor", layout="wide", initial_sidebar_state="expanded")
-    with open("../assets/style.css") as f:
+    with open("assets/style.css") as f:
         st.markdown("<style>{}</style>".format(f.read()), unsafe_allow_html=True)
 
     input_data = add_sidebar()
