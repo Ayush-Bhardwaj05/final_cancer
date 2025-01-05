@@ -129,7 +129,7 @@ def get_radar_chart(input_data):
 # Function to make predictions and display results
 def add_predictions(input_data):
     # Load the ensemble model, scaler, and PCA transformer using joblib
-    model = joblib.load("model/ensemble_model.joblib")
+    model = joblib.load("model/ensemble_model.joblib", mmap_mode='r')
     scaler = joblib.load("model/scaler.joblib")
     pca = joblib.load("model/pca.joblib")
 
